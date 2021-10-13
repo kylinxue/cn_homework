@@ -15,13 +15,13 @@ import (
 func main() {
 	_ = flag.Set("v", "4")
 	flag.Parse()
-	glog.V(2).Info("Starting http server...")
+	glog.Info("Starting http server...")
 
 	http.HandleFunc("/headers", echoHeaders)
 	http.HandleFunc("/infos", infos)
 	http.HandleFunc("/healthz", healthz)
 
-	err := http.ListenAndServe(":80", nil)
+	err := http.ListenAndServe("0.0.0.0:80", nil)
 
 	if err != nil {
 		log.Fatal(err)

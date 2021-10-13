@@ -1,4 +1,4 @@
-module github.com/kylinxue/my-http-server
+module github.com/kylinxue/cn_homework
 
 go 1.15
 
