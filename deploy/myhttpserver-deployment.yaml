@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myhttpserver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myhttpserver
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: myhttpserver
+    spec:
+      containers:
+        - name: myhttpserver
+          image: kylinxue/httpserver:v1.0
+          ports:
+            - containerPort: 80
+          lifecycle:
+            postStart:
+              exec:
+                command: ['/bin/sh', '-c', 'echo Starting httpserver...']
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 30Mi
+            limits:
+              cpu: 100m
+              memory: 50Mi
+          envFrom:
+            - configMapRef:
+                name: httpserver-config
+          volumeMounts:
+            - name: log-volume
+              mountPath: /logs
+      volumes:
+        - name: log-volume
+          emptyDir:
+            sizeLimit: 20Mi
