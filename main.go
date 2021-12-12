@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,11 +12,15 @@ import (
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/kylinxue/cn_homework/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
-	//_ = flag.Set("v", "4")
-	//flag.Parse()
+
+	metrics.Register()
+
 	log.Println("Starting http server...")
 
 	mux := http.NewServeMux()
@@ -23,6 +28,9 @@ func main() {
 	mux.HandleFunc("/headers", echoHeaders)
 	mux.HandleFunc("/infos", infos)
 	mux.HandleFunc("/healthz", healthz)
+
+	mux.Handle("/metrics", promhttp.Handler())
+
 
 	srv := http.Server{
 		Addr:    ":80",
@@ -55,9 +63,9 @@ func main() {
 
 func infos(w http.ResponseWriter, r *http.Request) {
 
-	env := os.Getenv("JAVA_HOME1")
+	env := os.Getenv("VERSION")
 	host := r.Host
-	fmt.Println(host, env)
+	log.Println(host, env)
 }
 
 // 返回请求的Headers
@@ -76,9 +84,20 @@ func healthz(w http.ResponseWriter, r *http.Request) {
 	_, _ = io.WriteString(w, "ok\n")
 }
 
+func randInt(min int, max int) int {
+	rand.Seed(time.Now().UTC().UnixNano())
+	return min + rand.Intn(max-min)
+}
+
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("entering root handler")
+
+	timer := metrics.NewTimer()
+	defer timer.ObserveTotal()
 	user := r.URL.Query().Get("user")
+	delay := randInt(10,2000)
+	time.Sleep(time.Millisecond*time.Duration(delay))
+
 	if user != "" {
 		io.WriteString(w, fmt.Sprintf("hello [%s]\n", user))
 	} else {
